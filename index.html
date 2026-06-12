@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ebook Library</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-content">
+            <a href="#" class="logo">
+                <span class="logo-icon">📚</span>
+                <span>Ebook Library</span>
+            </a>
+            <div class="nav-actions">
+                <span class="book-count" id="bookCount">0 books</span>
+                <button class="btn btn-ghost" id="adminBtn">🔑 Admin</button>
+                <button class="btn btn-primary" id="uploadNavBtn">📤 Upload</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Digital Library</h1>
+            <p>A curated collection of ebooks for your reading pleasure</p>
+        </div>
+    </section>
+
+    <!-- Book Grid -->
+    <main class="main-content">
+        <div class="book-grid" id="bookGrid"></div>
+        <div class="empty-state" id="emptyState">
+            <div class="empty-icon">📭</div>
+            <h3>No books in the library yet</h3>
+            <p>Check back soon for new additions!</p>
+        </div>
+    </main>
+
+    <!-- Preview Modal -->
+    <div class="modal-overlay" id="previewModal">
+        <div class="modal preview-modal">
+            <div class="modal-header">
+                <h2 id="previewTitle">Book Preview</h2>
+                <button class="modal-close" onclick="closePreview()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="preview-container" id="previewContainer">
+                    <div class="preview-loading">Loading preview...</div>
+                </div>
+                <div class="preview-info">
+                    <div class="preview-meta" id="previewMeta"></div>
+                    <button class="btn btn-primary" id="previewDownloadBtn">⬇️ Download</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Upload Modal -->
+    <div class="modal-overlay" id="uploadModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>📤 Upload New Book</h2>
+                <button class="modal-close" onclick="closeUploadModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="error-message" id="uploadError"></div>
+                <div class="upload-area" id="uploadArea">
+                    <div class="upload-icon">☁️</div>
+                    <div class="upload-text">Drag & drop or click to browse</div>
+                    <div class="upload-hint">PDF, EPUB, MOBI • Max 100MB</div>
+                </div>
+                <input type="file" id="fileInput" accept=".pdf,.epub,.mobi" hidden>
+                <div class="file-info" id="fileInfo">
+                    <span class="file-icon">📄</span>
+                    <span id="selectedFileName"></span>
+                    <span class="file-size" id="selectedFileSize"></span>
+                </div>
+                <div class="progress-bar" id="progressBar">
+                    <div class="progress" id="progress"></div>
+                </div>
+                <button class="btn btn-primary" id="uploadBtn" disabled>Upload Book</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="modal-overlay" id="passwordModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🔐 Admin Access</h2>
+                <button class="modal-close" onclick="closePasswordModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="error-message" id="passwordError"></div>
+                <div class="input-group">
+                    <label>Password</label>
+                    <input type="password" id="passwordInput" placeholder="Enter admin password">
+                </div>
+                <button class="btn btn-primary" id="unlockBtn">Unlock</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Modal -->
+    <div class="modal-overlay" id="deleteModal">
+        <div class="modal">
+            <div class="modal-header">
+                <h2>🗑️ Delete Book</h2>
+                <button class="modal-close" onclick="closeDeleteModal()">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Delete "<strong id="deleteBookName"></strong>"?</p>
+                <p class="text-danger">This action cannot be undone.</p>
+                <div class="btn-group">
+                    <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+                    <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+</html>
