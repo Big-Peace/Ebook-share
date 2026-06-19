@@ -3,128 +3,161 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ebook Library</title>
+    <title>Ebook Library - Hand-picked titles, beautifully presented.</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-    <!-- Navigation -->
+
+    <!-- NAVBAR -->
     <nav class="navbar">
         <div class="nav-content">
             <a href="#" class="logo">
                 <span class="logo-icon">📚</span>
-                <span>E-edition</span>
+                <span>BIG_PEACE Library</span>
             </a>
-            <div class="nav-actions">
-                <span class="book-count" id="bookCount">0 books</span>
-                <button class="btn btn-ghost" id="adminBtn">🔑 Admin</button>
-                <button class="btn btn-primary" id="uploadNavBtn">📤 Upload</button>
+            <div class="nav-links">
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <button class="btn btn-outline btn-sm" id="adminBtn" onclick="handleAdminClick()">🔑 Admin</button>
+                <button class="btn btn-primary btn-sm" id="uploadNavBtn" onclick="handleUploadClick()" style="display:none;">📤 Upload</button>
             </div>
         </div>
     </nav>
 
-    <!-- Hero -->
+    <!-- HERO -->
     <section class="hero">
-        <div class="hero-content">
-            <h1>Digital Bookshelf</h1>
-            <p>Knowledge at your fingertips. Affordable, accessible ebooks for students, researchers, and lifelong learners.</p>
+        <div class="hero-container">
+            <div class="hero-text">
+                <span class="hero-badge">✨ Hand-picked titles, beautifully presented.</span>
+                <h1>Discover Your Next<br>Great Read</h1>
+                <p>Read more. Grow more. This is where ambitious readers find the books that change everything.</p>
+                <div class="hero-buttons">
+                    <a href="#library" class="btn btn-primary btn-lg">Browse Library ⬇️</a>
+                    <a href="#library" class="btn btn-outline btn-lg">View Collection</a>
+                </div>
+                <p class="hero-trust">🟢 Free • Instant Download • No Signup</p>
+            </div>
+            <div class="hero-image">
+                <div class="hero-mockup">
+                    <span class="mockup-icon">📖</span>
+                    <div class="mockup-glow"></div>
+                </div>
+            </div>
         </div>
     </section>
 
-    <!-- Book Grid -->
-    <main class="main-content">
-        <div class="book-grid" id="bookGrid"></div>
-        <div class="empty-state" id="emptyState">
-            <div class="empty-icon">📭</div>
-            <h3>No books in the library yet</h3>
-            <p>Check back soon for new additions!</p>
+    <!-- SOCIAL PROOF -->
+    <section class="social-proof">
+        <div class="proof-content">
+            <div class="proof-item"><span class="proof-number" id="totalBooks">0</span><span class="proof-label">Curated Books</span></div>
+            <div class="proof-divider"></div>
+            <div class="proof-item"><span class="proof-number" id="totalDownloads">0</span><span class="proof-label">Downloads</span></div>
+            <div class="proof-divider"></div>
+            <div class="proof-item"><span class="proof-number">3</span><span class="proof-label">Formats</span></div>
+            <div class="proof-divider"></div>
+            <div class="proof-item"><span class="proof-number">⭐ 4.9</span><span class="proof-label">Rating</span></div>
         </div>
-    </main>
+    </section>
 
-    <!-- Preview Modal -->
+    <!-- LIBRARY -->
+    <section class="library-section" id="library">
+        <div class="section-header">
+            <span class="section-tag">📘 The Collection</span>
+            <h2>Browse Our Library</h2>
+            <p>Every title carefully selected. Beautifully formatted. Ready to download.</p>
+        </div>
+        <div class="library-controls">
+            <div class="search-box">
+                <span class="search-icon">🔍</span>
+                <input type="text" placeholder="Search by title..." id="searchInput" oninput="searchBooks()">
+            </div>
+            <div class="filter-tabs">
+                <button class="filter-tab active" onclick="filterBooks('all')">All</button>
+                <button class="filter-tab" onclick="filterBooks('pdf')">📕 PDF</button>
+                <button class="filter-tab" onclick="filterBooks('epub')">📗 EPUB</button>
+                <button class="filter-tab" onclick="filterBooks('mobi')">📘 MOBI</button>
+            </div>
+        </div>
+        <div class="book-grid" id="bookGrid"></div>
+        <div class="empty-state" id="emptyState"><div class="empty-icon">📭</div><h3>No books yet</h3><p>The library is currently empty.</p></div>
+    </section>
+
+    <!-- FEATURES -->
+    <section class="features-section">
+        <div class="section-header">
+            <span class="section-tag">✨ Why Us</span>
+            <h2>What Makes Our Library Special</h2>
+            <p>We believe in quality over quantity.</p>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card"><div class="feature-icon">📚</div><h3>Curated Collection</h3><p>Every title is hand-picked for quality.</p></div>
+            <div class="feature-card"><div class="feature-icon">⚡</div><h3>Instant Download</h3><p>One click and the book is yours.</p></div>
+            <div class="feature-card"><div class="feature-icon">📱</div><h3>Read Anywhere</h3><p>Compatible with all your devices.</p></div>
+            <div class="feature-card"><div class="feature-icon">🔄</div><h3>Always Updated</h3><p>New titles added regularly.</p></div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="cta-content">
+            <h2>Ready to Start Reading?</h2>
+            <p>Browse our hand-picked collection and download your next great read.</p>
+            <a href="#library" class="btn btn-primary btn-lg">Browse Library Now ⬇️</a>
+            <p class="cta-trust">No signup. No wait. Just books.</p>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-brand"><span>📚 Ebook Library</span><p>Hand-picked titles, beautifully presented.</p></div>
+            <div class="footer-links"><a href="#">About</a><a href="#">Contact</a><a href="#">Privacy</a></div>
+            <div class="footer-social"><span>📘</span><span>🐦</span><span>📷</span></div>
+        </div>
+        <div class="footer-bottom"><p>&copy; 2024 Ebook Library. All rights reserved.</p></div>
+    </footer>
+
+    <!-- MODALS -->
     <div class="modal-overlay" id="previewModal">
         <div class="modal preview-modal">
-            <div class="modal-header">
-                <h2 id="previewTitle">Book Preview</h2>
-                <button class="modal-close" onclick="closePreview()">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="preview-container" id="previewContainer">
-                    <div class="preview-loading">Loading preview...</div>
-                </div>
-                <div class="preview-info">
-                    <div class="preview-meta" id="previewMeta"></div>
-                    <button class="btn btn-primary" id="previewDownloadBtn">⬇️ Download</button>
-                </div>
-            </div>
+            <div class="modal-header"><div><h2 id="previewTitle">Preview</h2><p class="modal-subtitle" id="previewMeta"></p></div><button class="modal-close" onclick="closePreview()">✕</button></div>
+            <div class="modal-body"><div class="preview-container" id="previewContainer"><div class="preview-loading"><div class="spinner"></div><p>Loading...</p></div></div><div class="preview-actions"><button class="btn btn-outline" onclick="closePreview()">Close</button><button class="btn btn-primary" id="previewDownloadBtn">⬇️ Download</button></div></div>
         </div>
     </div>
 
-    <!-- Upload Modal -->
     <div class="modal-overlay" id="uploadModal">
         <div class="modal">
-            <div class="modal-header">
-                <h2>📤 Upload New Book</h2>
-                <button class="modal-close" onclick="closeUploadModal()">✕</button>
-            </div>
+            <div class="modal-header"><div><h2>Upload New Book</h2><p class="modal-subtitle">Add a book to the library</p></div><button class="modal-close" onclick="closeUploadModal()">✕</button></div>
             <div class="modal-body">
                 <div class="error-message" id="uploadError"></div>
-                <div class="upload-area" id="uploadArea">
-                    <div class="upload-icon">☁️</div>
-                    <div class="upload-text">Drag & drop or click to browse</div>
-                    <div class="upload-hint">PDF, EPUB, MOBI • Max 100MB</div>
-                </div>
-                <input type="file" id="fileInput" accept=".pdf,.epub,.mobi" hidden>
-                <div class="file-info" id="fileInfo">
-                    <span class="file-icon">📄</span>
-                    <span id="selectedFileName"></span>
-                    <span class="file-size" id="selectedFileSize"></span>
-                </div>
-                <div class="progress-bar" id="progressBar">
-                    <div class="progress" id="progress"></div>
-                </div>
-                <button class="btn btn-primary" id="uploadBtn" disabled>Upload Book</button>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()"><div class="upload-icon">☁️</div><div class="upload-text">Click to select file</div><div class="upload-formats">PDF • EPUB • MOBI • Max 100MB</div></div>
+                <input type="file" id="fileInput" accept=".pdf,.epub,.mobi" hidden onchange="handleFileSelect(this.files[0])">
+                <div class="file-info" id="fileInfo"><div class="file-info-left"><span class="file-icon">📄</span><div><div class="file-name" id="selectedFileName"></div><div class="file-size" id="selectedFileSize"></div></div></div></div>
+                <div class="progress-bar" id="progressBar"><div class="progress-fill" id="progress"></div></div>
+                <button class="btn btn-primary btn-full" id="uploadBtn" disabled onclick="uploadBook()">Upload Book</button>
             </div>
         </div>
     </div>
 
-    <!-- Password Modal -->
     <div class="modal-overlay" id="passwordModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>🔐 Admin Access</h2>
-                <button class="modal-close" onclick="closePasswordModal()">✕</button>
-            </div>
+        <div class="modal modal-sm">
+            <div class="modal-header"><div><h2>Admin Access</h2><p class="modal-subtitle">Enter password</p></div><button class="modal-close" onclick="closePasswordModal()">✕</button></div>
             <div class="modal-body">
                 <div class="error-message" id="passwordError"></div>
-                <div class="input-group">
-                    <label>Password</label>
-                    <input type="password" id="passwordInput" placeholder="Enter admin password">
-                </div>
-                <button class="btn btn-primary" id="unlockBtn">Unlock</button>
+                <div class="input-group"><label>Password</label><input type="password" id="passwordInput" placeholder="Enter admin password"></div>
+                <button class="btn btn-primary btn-full" onclick="verifyPassword()">Unlock</button>
             </div>
         </div>
     </div>
 
-    <!-- Delete Modal -->
     <div class="modal-overlay" id="deleteModal">
-        <div class="modal">
-            <div class="modal-header">
-                <h2>🗑️ Delete Book</h2>
-                <button class="modal-close" onclick="closeDeleteModal()">✕</button>
-            </div>
-            <div class="modal-body">
-                <p>Delete "<strong id="deleteBookName"></strong>"?</p>
-                <p class="text-danger">This action cannot be undone.</p>
-                <div class="btn-group">
-                    <button class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
-                    <button class="btn btn-ghost" onclick="closeDeleteModal()">Cancel</button>
-                </div>
-            </div>
+        <div class="modal modal-sm">
+            <div class="modal-header"><div><h2>Delete Book</h2></div><button class="modal-close" onclick="closeDeleteModal()">✕</button></div>
+            <div class="modal-body"><p>Delete "<strong id="deleteBookName"></strong>"?</p><div class="btn-group"><button class="btn btn-outline" onclick="closeDeleteModal()">Cancel</button><button class="btn btn-danger" id="confirmDeleteBtn" onclick="confirmDelete()">Delete</button></div></div>
         </div>
     </div>
 
-    <!-- Toast -->
     <div class="toast" id="toast"></div>
 
     <script src="script.js"></script>
