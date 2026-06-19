@@ -1,10 +1,7 @@
-// ============ SUPABASE CONFIGURATION ============
+// ============ SUPABASE ============
 const SUPABASE_URL = 'https://nycbxdeikgcmwjdddhjb.supabase.co';
 const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im55Y2J4ZGVpa2djbXdqZGRkaGpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODEyMDc2NTcsImV4cCI6MjA5Njc4MzY1N30.PZ25VzaCP79OGxJJw1y5xQHN0S58WZOUaNms0ZVpPx4';
-
 const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ============ CONFIGURATION ============
 const UPLOAD_PASSWORD = '280806';
 
 // ============ STATE ============
@@ -12,310 +9,148 @@ let isAdmin = false;
 let books = [];
 let selectedFile = null;
 let deleteBookId = null;
-let currentPreviewBook = null;
+let currentFilter = 'all';
 
-// ============ INITIALIZATION ============
+// ============ INIT ============
 loadBooks();
 
 async function loadBooks() {
-    try {
-        const { data, error } = await supabaseClient
-            .from('books')
-            .select('*')
-            .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        books = data || [];
-        renderBooks();
-    } catch (error) {
-        console.error('Error loading books:', error);
-    }
+    const { data, error } = await supabaseClient.from('books').select('*').order('created_at', { ascending: false });
+    if (!error) { books = data || []; }
+    renderBooks();
+    updateStats();
 }
 
-// ============ RENDER BOOKS ============
+function updateStats() {
+    document.getElementById('totalBooks').textContent = books.length;
+    document.getElementById('totalDownloads').textContent = books.reduce((s, b) => s + (b.downloads || 0), 0);
+}
+
+// ============ RENDER ============
 function renderBooks() {
-    const bookGrid = document.getElementById('bookGrid');
-    const emptyState = document.getElementById('emptyState');
-    const bookCount = document.getElementById('bookCount');
+    const grid = document.getElementById('bookGrid');
+    const empty = document.getElementById('emptyState');
+    let filtered = books;
+    if (currentFilter !== 'all') filtered = books.filter(b => b.name.toLowerCase().endsWith('.' + currentFilter));
     
-    bookCount.textContent = books.length + ' book' + (books.length !== 1 ? 's' : '');
-    
-    if (books.length === 0) {
-        bookGrid.innerHTML = '';
-        emptyState.style.display = 'block';
-    } else {
-        emptyState.style.display = 'none';
-        bookGrid.innerHTML = books.map(book => `
-            <div class="book-card">
-                <div class="book-icon">${getIcon(book.name)}</div>
-                <div class="book-title" onclick="openPreview('${book.id}')" title="Click to preview">
-                    ${escapeHtml(book.name)}
-                </div>
-                <div class="book-meta">
-                    <span>📦 ${book.size}</span>
-                    <span>📅 ${new Date(book.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
-                    <span>⬇️ ${book.downloads || 0} downloads</span>
-                </div>
-                <div class="book-actions">
-                    <button class="btn btn-ghost btn-sm" onclick="openPreview('${book.id}')">
-                        👁️ Preview
-                    </button>
-                    <button class="btn btn-primary btn-sm" onclick="downloadBook('${book.id}')">
-                        ⬇️ Download
-                    </button>
-                    ${isAdmin ? `
-                        <button class="btn btn-danger btn-sm" onclick="openDeleteModal('${book.id}')">
-                            🗑️
-                        </button>
-                    ` : ''}
-                </div>
-            </div>
-        `).join('');
+    if (filtered.length === 0) { grid.innerHTML = ''; empty.style.display = 'block'; }
+    else {
+        empty.style.display = 'none';
+        grid.innerHTML = filtered.map(book => {
+            const ext = book.name.split('.').pop().toLowerCase();
+            const icons = { pdf: '📕', epub: '📗', mobi: '📘' };
+            return `<div class="book-card">
+                <div class="book-icon">${icons[ext] || '📙'}</div>
+                <div class="book-title" onclick="openPreview('${book.id}')">${book.name}</div>
+                <div class="book-meta-row"><span class="book-meta-item">📦 ${book.size}</span><span class="book-meta-item">⬇️ ${book.downloads||0}</span></div>
+                <div class="book-card-actions">
+                    <button class="btn btn-outline btn-sm" onclick="openPreview('${book.id}')">👁️</button>
+                    <button class="btn btn-primary btn-sm" onclick="downloadBook('${book.id}')">⬇️</button>
+                    ${isAdmin?`<button class="btn btn-danger btn-sm" onclick="openDeleteModal('${book.id}')">🗑️</button>`:''}
+                </div></div>`;
+        }).join('');
     }
 }
 
-function getIcon(filename) {
-    const ext = filename.split('.').pop().toLowerCase();
-    const icons = { 'pdf': '📕', 'epub': '📗', 'mobi': '📘' };
-    return icons[ext] || '📙';
+// ============ SEARCH & FILTER ============
+function searchBooks() {
+    const q = document.getElementById('searchInput').value.toLowerCase();
+    document.querySelectorAll('.book-card').forEach(card => {
+        const title = card.querySelector('.book-title').textContent.toLowerCase();
+        card.style.display = title.includes(q) ? '' : 'none';
+    });
 }
 
-// ============ PREVIEW FUNCTION ============
+function filterBooks(type) {
+    currentFilter = type;
+    document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+    event.target.classList.add('active');
+    renderBooks();
+}
+
+// ============ PREVIEW ============
 async function openPreview(bookId) {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
-    
-    currentPreviewBook = book;
-    
     document.getElementById('previewTitle').textContent = book.name;
-    document.getElementById('previewMeta').textContent = `📦 ${book.size} • ⬇️ ${book.downloads || 0} downloads`;
-    document.getElementById('previewContainer').innerHTML = '<div class="preview-loading">Loading preview...</div>';
+    document.getElementById('previewMeta').textContent = `📦 ${book.size} • ⬇️ ${book.downloads||0}`;
+    document.getElementById('previewContainer').innerHTML = '<div class="preview-loading"><div class="spinner"></div><p>Loading...</p></div>';
     document.getElementById('previewModal').classList.add('active');
-    
-    // Set download button
-    document.getElementById('previewDownloadBtn').onclick = () => {
-        downloadBook(book.id);
-        closePreview();
-    };
+    document.getElementById('previewDownloadBtn').onclick = () => { downloadBook(book.id); closePreview(); };
     
     try {
-        const { data, error } = await supabaseClient
-            .storage
-            .from('ebooks')
-            .download(book.storage_path);
-        
-        if (error) throw error;
-        
+        const { data } = await supabaseClient.storage.from('ebooks').download(book.storage_path);
         const ext = book.name.split('.').pop().toLowerCase();
-        const blobUrl = URL.createObjectURL(data);
-        
-        if (ext === 'pdf') {
-            // Show PDF preview
-            document.getElementById('previewContainer').innerHTML = `
-                <iframe src="${blobUrl}" width="100%" height="500px"></iframe>
-            `;
-        } else if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-            // Show image preview
-            document.getElementById('previewContainer').innerHTML = `
-                <img src="${blobUrl}" alt="${book.name}">
-            `;
-        } else {
-            // Show generic preview for EPUB, MOBI, etc.
-            document.getElementById('previewContainer').innerHTML = `
-                <div style="text-align: center; padding: 60px 20px;">
-                    <div style="font-size: 80px; margin-bottom: 20px;">📖</div>
-                    <h3 style="color: var(--text-secondary); margin-bottom: 10px;">${escapeHtml(book.name)}</h3>
-                    <p style="color: var(--text-muted);">Preview not available for this file type</p>
-                    <p style="color: var(--text-muted); margin-top: 5px;">Click Download to get the full file</p>
-                </div>
-            `;
-        }
-    } catch (error) {
-        console.error('Preview error:', error);
-        document.getElementById('previewContainer').innerHTML = `
-            <div style="text-align: center; padding: 60px 20px; color: var(--text-muted);">
-                Unable to load preview. You can still download the file.
-            </div>
-        `;
+        const url = URL.createObjectURL(data);
+        document.getElementById('previewContainer').innerHTML = ext === 'pdf' ? `<iframe src="${url}"></iframe>` : `<div style="text-align:center;padding:60px;"><div style="font-size:80px;">📖</div><h3>${book.name}</h3><p style="color:#8a8a8a;">Preview not available</p></div>`;
+    } catch(e) {
+        document.getElementById('previewContainer').innerHTML = '<p style="text-align:center;padding:60px;color:#8a8a8a;">Unable to load preview.</p>';
     }
 }
 
-function closePreview() {
-    document.getElementById('previewModal').classList.remove('active');
-    document.getElementById('previewContainer').innerHTML = '<div class="preview-loading">Loading preview...</div>';
-    currentPreviewBook = null;
-}
+function closePreview() { document.getElementById('previewModal').classList.remove('active'); }
 
 // ============ DOWNLOAD ============
 async function downloadBook(bookId) {
     const book = books.find(b => b.id === bookId);
     if (!book) return;
-    
-    await supabaseClient
-        .from('books')
-        .update({ downloads: (book.downloads || 0) + 1 })
-        .eq('id', bookId);
-    
-    try {
-        const { data, error } = await supabaseClient
-            .storage
-            .from('ebooks')
-            .download(book.storage_path);
-        
-        if (error) throw error;
-        
+    await supabaseClient.from('books').update({ downloads: (book.downloads||0)+1 }).eq('id', bookId);
+    const { data } = await supabaseClient.storage.from('ebooks').download(book.storage_path);
+    if (data) {
         const url = URL.createObjectURL(data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = book.name;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        const a = document.createElement('a'); a.href = url; a.download = book.name; a.click();
         URL.revokeObjectURL(url);
-        
-        toast('Download started!', 'success');
-        loadBooks(); // Refresh to update download count
-    } catch (error) {
-        console.error('Download error:', error);
-        toast('Download failed', 'error');
+        toast('Downloaded!');
+        loadBooks();
     }
 }
 
 // ============ UPLOAD ============
+function handleAdminClick() {
+    if (isAdmin) { openUploadModal(); }
+    else { openPasswordModal(); }
+}
+
+function handleUploadClick() { openUploadModal(); }
+
 function openUploadModal() {
     if (!isAdmin) { openPasswordModal(); return; }
     document.getElementById('uploadModal').classList.add('active');
-    resetUploadForm();
 }
 
-function closeUploadModal() {
-    document.getElementById('uploadModal').classList.remove('active');
-    resetUploadForm();
-}
-
-function resetUploadForm() {
-    selectedFile = null;
-    document.getElementById('fileInfo').style.display = 'none';
-    document.getElementById('progressBar').style.display = 'none';
-    document.getElementById('uploadBtn').disabled = true;
-    document.getElementById('uploadError').style.display = 'none';
-    document.getElementById('progress').style.width = '0%';
-    document.getElementById('fileInput').value = '';
-}
-
-// File selection events
-document.getElementById('uploadArea').addEventListener('click', () => {
-    document.getElementById('fileInput').click();
-});
-
-document.getElementById('uploadArea').addEventListener('dragover', (e) => {
-    e.preventDefault();
-    e.target.classList.add('dragover');
-});
-
-document.getElementById('uploadArea').addEventListener('dragleave', (e) => {
-    e.target.classList.remove('dragover');
-});
-
-document.getElementById('uploadArea').addEventListener('drop', (e) => {
-    e.preventDefault();
-    e.target.classList.remove('dragover');
-    handleFileSelect(e.dataTransfer.files[0]);
-});
-
-document.getElementById('fileInput').addEventListener('change', (e) => {
-    if (e.target.files[0]) handleFileSelect(e.target.files[0]);
-});
+function closeUploadModal() { document.getElementById('uploadModal').classList.remove('active'); }
 
 function handleFileSelect(file) {
     if (!file) return;
-    
-    const allowedExtensions = ['.pdf', '.epub', '.mobi'];
-    const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
-    
-    if (!allowedExtensions.includes(fileExtension)) {
-        showUploadError('Only PDF, EPUB, and MOBI files are allowed.');
-        return;
-    }
-    
-    if (file.size > 100 * 1024 * 1024) {
-        showUploadError('File size must be less than 100MB.');
-        return;
-    }
-    
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    if (!['.pdf','.epub','.mobi'].includes(ext)) { alert('Invalid file type'); return; }
+    if (file.size > 100*1024*1024) { alert('File too large'); return; }
     selectedFile = file;
     document.getElementById('selectedFileName').textContent = file.name;
-    document.getElementById('selectedFileSize').textContent = formatFileSize(file.size);
+    document.getElementById('selectedFileSize').textContent = (file.size/1024/1024).toFixed(1)+' MB';
     document.getElementById('fileInfo').style.display = 'flex';
     document.getElementById('uploadBtn').disabled = false;
-    document.getElementById('uploadError').style.display = 'none';
 }
-
-document.getElementById('uploadBtn').addEventListener('click', uploadBook);
 
 async function uploadBook() {
     if (!selectedFile || !isAdmin) return;
+    const btn = document.getElementById('uploadBtn'); btn.disabled = true;
+    const bar = document.getElementById('progressBar'); bar.style.display = 'block';
+    const prog = document.getElementById('progress'); prog.style.width = '0%';
     
-    const uploadBtn = document.getElementById('uploadBtn');
-    const progressBar = document.getElementById('progressBar');
-    const progress = document.getElementById('progress');
+    const id = Date.now()+'_'+Math.random().toString(36).substr(2,9);
+    const path = id+'_'+selectedFile.name;
     
-    uploadBtn.disabled = true;
-    progressBar.style.display = 'block';
-    progress.style.width = '0%';
-    document.getElementById('uploadError').style.display = 'none';
+    let int = setInterval(() => { let w = parseFloat(prog.style.width)||0; if(w<85) prog.style.width = (w+Math.random()*10)+'%'; }, 300);
     
-    try {
-        const uniqueId = Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        const storagePath = uniqueId + '_' + selectedFile.name;
-        
-        let progressInterval = setInterval(() => {
-            let currentWidth = parseFloat(progress.style.width) || 0;
-            if (currentWidth < 85) progress.style.width = (currentWidth + Math.random() * 10) + '%';
-        }, 300);
-        
-        const { error: uploadError } = await supabaseClient
-            .storage
-            .from('ebooks')
-            .upload(storagePath, selectedFile);
-        
-        clearInterval(progressInterval);
-        if (uploadError) throw uploadError;
-        
-        progress.style.width = '100%';
-        
-        const { error: dbError } = await supabaseClient
-            .from('books')
-            .insert([{
-                id: uniqueId,
-                name: selectedFile.name,
-                size: formatFileSize(selectedFile.size),
-                storage_path: storagePath,
-                downloads: 0
-            }]);
-        
-        if (dbError) throw dbError;
-        
-        setTimeout(() => {
-            progressBar.style.display = 'none';
-            uploadBtn.disabled = false;
-            closeUploadModal();
-            toast('Uploaded successfully!', 'success');
-            loadBooks();
-        }, 500);
-        
-    } catch (error) {
-        console.error('Upload error:', error);
-        showUploadError('Upload failed: ' + (error.message || 'Unknown error'));
-        uploadBtn.disabled = false;
-        progressBar.style.display = 'none';
-    }
-}
-
-function showUploadError(message) {
-    const el = document.getElementById('uploadError');
-    el.textContent = message;
-    el.style.display = 'block';
+    const { error: upErr } = await supabaseClient.storage.from('ebooks').upload(path, selectedFile);
+    clearInterval(int);
+    if (upErr) { alert('Upload failed: '+upErr.message); btn.disabled=false; bar.style.display='none'; return; }
+    
+    prog.style.width = '100%';
+    await supabaseClient.from('books').insert([{ id, name: selectedFile.name, size: (selectedFile.size/1024/1024).toFixed(1)+' MB', storage_path: path, downloads: 0 }]);
+    
+    setTimeout(() => { bar.style.display='none'; btn.disabled=false; closeUploadModal(); toast('Uploaded!'); loadBooks(); }, 500);
 }
 
 // ============ PASSWORD ============
@@ -326,103 +161,50 @@ function openPasswordModal() {
     setTimeout(() => document.getElementById('passwordInput').focus(), 100);
 }
 
-function closePasswordModal() {
-    document.getElementById('passwordModal').classList.remove('active');
-}
+function closePasswordModal() { document.getElementById('passwordModal').classList.remove('active'); }
 
 function verifyPassword() {
     if (document.getElementById('passwordInput').value === UPLOAD_PASSWORD) {
         isAdmin = true;
         closePasswordModal();
+        document.getElementById('uploadNavBtn').style.display = 'inline-flex';
+        document.getElementById('adminBtn').textContent = '✅ Admin';
         renderBooks();
-        toast('Admin access granted!', 'success');
+        toast('Admin granted!');
     } else {
-        document.getElementById('passwordError').textContent = 'Incorrect password.';
         document.getElementById('passwordError').style.display = 'block';
         document.getElementById('passwordInput').value = '';
-        document.getElementById('passwordInput').focus();
     }
 }
 
 // ============ DELETE ============
 function openDeleteModal(bookId) {
-    if (!isAdmin) { toast('Admin only!', 'error'); return; }
-    const book = books.find(b => b.id === bookId);
-    if (!book) return;
+    if (!isAdmin) return;
     deleteBookId = bookId;
-    document.getElementById('deleteBookName').textContent = book.name;
+    document.getElementById('deleteBookName').textContent = books.find(b=>b.id===bookId)?.name;
     document.getElementById('deleteModal').classList.add('active');
 }
 
-function closeDeleteModal() {
-    document.getElementById('deleteModal').classList.remove('active');
-    deleteBookId = null;
+function closeDeleteModal() { document.getElementById('deleteModal').classList.remove('active'); }
+
+async function confirmDelete() {
+    if (!deleteBookId) return;
+    const book = books.find(b=>b.id===deleteBookId);
+    await supabaseClient.storage.from('ebooks').remove([book.storage_path]);
+    await supabaseClient.from('books').delete().eq('id', deleteBookId);
+    closeDeleteModal(); toast('Deleted!'); loadBooks();
 }
 
-document.getElementById('confirmDeleteBtn').addEventListener('click', async () => {
-    if (!isAdmin || !deleteBookId) return;
-    const book = books.find(b => b.id === deleteBookId);
-    if (!book) return;
-    
-    try {
-        await supabaseClient.storage.from('ebooks').remove([book.storage_path]);
-        await supabaseClient.from('books').delete().eq('id', deleteBookId);
-        closeDeleteModal();
-        toast('Deleted!', 'success');
-        loadBooks();
-    } catch (error) {
-        console.error('Delete error:', error);
-        toast('Delete failed', 'error');
-    }
+// ============ MODAL CLOSE ============
+document.querySelectorAll('.modal-overlay').forEach(o => {
+    o.addEventListener('click', (e) => { if(e.target===o) o.classList.remove('active'); });
 });
 
-// ============ EVENT LISTENERS ============
-document.getElementById('uploadNavBtn').addEventListener('click', openUploadModal);
-document.getElementById('adminBtn').addEventListener('click', openPasswordModal);
-document.getElementById('unlockBtn').addEventListener('click', verifyPassword);
-document.getElementById('passwordInput').addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') verifyPassword();
-});
-
-// Close modals on overlay click
-document.querySelectorAll('.modal-overlay').forEach(overlay => {
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            if (overlay.id === 'previewModal') closePreview();
-            else if (overlay.id === 'uploadModal') closeUploadModal();
-            else if (overlay.id === 'passwordModal') closePasswordModal();
-            else if (overlay.id === 'deleteModal') closeDeleteModal();
-        }
-    });
-});
-
-// Keyboard shortcuts
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-        document.querySelectorAll('.modal-overlay.active').forEach(modal => {
-            modal.classList.remove('active');
-        });
-    }
-});
-
-// ============ HELPERS ============
-function toast(message, type = 'success') {
+// ============ TOAST ============
+function toast(msg) {
     const t = document.getElementById('toast');
-    t.textContent = message;
-    t.className = 'toast ' + type + ' show';
+    t.textContent = msg; t.className = 'toast success show';
     setTimeout(() => t.classList.remove('show'), 3000);
-}
-
-function formatFileSize(bytes) {
-    if (bytes < 1024) return bytes + ' B';
-    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
 }
 
 // ============ START ============
